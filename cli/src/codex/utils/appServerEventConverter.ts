@@ -506,6 +506,7 @@ export class AppServerEventConverter {
             // MCP tool calls: function_call, functioncalloutput, mcptoolcall, etc.
             if (itemType === 'functioncall' || itemType === 'mcptoolcall' || itemType === 'tooluse') {
                 logger.info('[AppServerEventConverter] function_call item', { method, itemType, itemKeys: Object.keys(item), item: JSON.stringify(item).substring(0, 800) });
+                try { require('fs').appendFileSync('/tmp/hapi-mcp-debug.log', `${new Date().toISOString()} ${method} ${itemType} keys=${Object.keys(item).join(',')} data=${JSON.stringify(item).substring(0, 500)}\n`); } catch { /* */ }
                 if (method === 'item/started') {
                     const name = asString(item.name ?? item.tool ?? item.function ?? item.toolName ?? item.tool_name);
                     const callId = asString(item.callId ?? item.call_id ?? item.id ?? itemId);
