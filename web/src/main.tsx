@@ -36,6 +36,11 @@ function getInitialPath(): string {
 async function bootstrap() {
     initializeFontScale()
 
+    // Detect iframe embedding (e.g. NM dashboard)
+    if (window.self !== window.top) {
+        document.documentElement.dataset.embedded = 'true'
+    }
+
     // Only load Telegram SDK in Telegram environment (with 3s timeout)
     const isTelegram = isTelegramEnvironment()
     document.documentElement.dataset.telegramApp = isTelegram ? 'true' : 'false'

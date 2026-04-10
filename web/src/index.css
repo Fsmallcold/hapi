@@ -109,6 +109,11 @@ html[data-telegram-app="true"] body {
     overflow: hidden;
 }
 
+/* Embedded iframe mode: remove content width cap for full-width layout */
+html[data-embedded="true"] .max-w-content {
+    max-width: none;
+}
+
 html:not([data-telegram-app="true"]),
 html:not([data-telegram-app="true"]) body {
     overflow-x: hidden;
