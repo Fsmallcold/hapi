@@ -523,9 +523,11 @@ export const routeTree = rootRoute.addChildren([
 type RouterHistory = Parameters<typeof createRouter>[0]['history']
 
 export function createAppRouter(history?: RouterHistory) {
+    const base = import.meta.env.BASE_URL
     return createRouter({
         routeTree,
         history,
+        basepath: base !== '/' ? base.replace(/\/+$/, '') : undefined,
         scrollRestoration: true,
     })
 }

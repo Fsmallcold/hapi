@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useMatchRoute, useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { getTelegramWebApp, isTelegramApp } from '@/hooks/useTelegram'
@@ -341,22 +341,26 @@ function AppInner() {
         )
     }
 
+    // Skip voice features when embedded in an iframe (e.g. NM dashboard)
+    const isEmbedded = window.self !== window.top
+    const Wrapper = isEmbedded ? ({ children }: { children: React.ReactNode }) => <>{children}</> : VoiceProvider
+
     return (
         <AppContextProvider value={{ api, token, baseUrl }}>
-            <VoiceProvider>
+            <Wrapper>
                 <SyncingBanner isSyncing={isSyncing} />
                 <ReconnectingBanner
                     isReconnecting={sseDisconnected && !isSyncing}
                     reason={sseDisconnectReason}
                 />
-                <VoiceErrorBanner />
+                {!isEmbedded && <VoiceErrorBanner />}
                 <OfflineBanner />
                 <div className="h-full min-h-0 flex flex-col">
                     <Outlet />
                 </div>
                 <ToastContainer />
-                <InstallPrompt />
-            </VoiceProvider>
+                {!isEmbedded && <InstallPrompt />}
+            </Wrapper>
         </AppContextProvider>
     )
 }
