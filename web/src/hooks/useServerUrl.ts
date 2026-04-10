@@ -23,7 +23,11 @@ export function normalizeServerUrl(input: string): ServerUrlResult {
         return { ok: false, error: 'Hub URL must start with http:// or https://' }
     }
 
-    return { ok: true, value: parsed.origin }
+    // Preserve pathname (e.g., /hapi-web) for reverse-proxy setups
+    const value = parsed.pathname && parsed.pathname !== '/'
+        ? `${parsed.origin}${parsed.pathname.replace(/\/$/, '')}`
+        : parsed.origin
+    return { ok: true, value }
 }
 
 function getServerFromUrlParams(): string | null {

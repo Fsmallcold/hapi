@@ -74,7 +74,9 @@ export class ApiClient {
             return path
         }
         try {
-            return new URL(path, this.baseUrl).toString()
+            const base = this.baseUrl.endsWith('/') ? this.baseUrl : this.baseUrl + '/'
+            const relative = path.startsWith('/') ? path.slice(1) : path
+            return new URL(relative, base).toString()
         } catch {
             return path
         }

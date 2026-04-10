@@ -505,21 +505,20 @@ export class AppServerEventConverter {
 
             // MCP tool calls: function_call, functioncalloutput, mcptoolcall, etc.
             if (itemType === 'functioncall' || itemType === 'mcptoolcall' || itemType === 'tooluse') {
+                logger.info('[AppServerEventConverter] function_call item', { method, itemType, itemKeys: Object.keys(item), item: JSON.stringify(item).substring(0, 800) });
                 if (method === 'item/started') {
-                    const name = asString(item.name ?? item.tool ?? item.function);
+                    const name = asString(item.name ?? item.tool ?? item.function ?? item.toolName ?? item.tool_name);
                     const callId = asString(item.callId ?? item.call_id ?? item.id ?? itemId);
                     const rawArgs = item.arguments ?? item.input ?? item.args;
                     let parsedArgs = rawArgs;
                     if (typeof rawArgs === 'string') {
                         try { parsedArgs = JSON.parse(rawArgs); } catch { /* keep as string */ }
                     }
-                    if (name && callId) {
-                        events.push({
-                            type: 'mcp_tool_call_begin',
-                            call_id: callId,
-                            invocation: { tool: name, arguments: parsedArgs }
-                        });
-                    }
+                    events.push({
+                        type: 'mcp_tool_call_begin',
+                        call_id: callId,
+                        invocation: { tool: name ?? 'unknown', arguments: parsedArgs }
+                    });
                 }
                 if (method === 'item/completed') {
                     const callId = asString(item.callId ?? item.call_id ?? item.id ?? itemId);
