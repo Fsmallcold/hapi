@@ -15,6 +15,7 @@ import type { ApiSessionClient } from '@/api/apiSession';
 export interface McpServerEntry {
     command: string;
     args: string[];
+    env?: Record<string, string>;
 }
 
 /**
