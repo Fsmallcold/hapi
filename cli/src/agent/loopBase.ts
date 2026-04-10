@@ -1,7 +1,7 @@
 import { logger } from '@/ui/logger';
 import type { AgentSessionBase } from './sessionBase';
 
-export type LoopLauncher<TSession> = (session: TSession) => Promise<'switch' | 'exit'>;
+export type LoopLauncher<TSession> = (session: TSession) => Promise<'switch' | 'exit' | 'retry'>;
 
 export async function runLocalRemoteSession<TSession extends AgentSessionBase<any>>(opts: {
     session: TSession;
@@ -40,6 +40,10 @@ export async function runLocalRemoteLoop<TSession extends AgentSessionBase<any>>
             const reason = await opts.runLocal(opts.session);
             if (reason === 'exit') {
                 return;
+            }
+            // 'retry' stays in local mode (auto-resume, no mode switch)
+            if (reason === 'retry') {
+                continue;
             }
 
             mode = 'remote';

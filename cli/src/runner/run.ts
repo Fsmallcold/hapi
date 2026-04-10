@@ -373,6 +373,22 @@ export async function startRunner(): Promise<void> {
           args.push('--yolo');
         }
 
+        // Inject custom MCP servers as Codex -c overrides
+        if (options.mcpServers && agent === 'codex') {
+          for (const [name, serverConfig] of Object.entries(options.mcpServers)) {
+            args.push('-c', `mcp_servers.${name}.command="${serverConfig.command}"`);
+            if (serverConfig.args && serverConfig.args.length > 0) {
+              const argsJson = JSON.stringify(serverConfig.args);
+              args.push('-c', `mcp_servers.${name}.args=${argsJson}`);
+            }
+            if (serverConfig.env) {
+              for (const [envKey, envVal] of Object.entries(serverConfig.env)) {
+                args.push('-c', `mcp_servers.${name}.env.${envKey}="${envVal}"`);
+              }
+            }
+          }
+        }
+
         // sessionId reserved for future use
         const MAX_TAIL_CHARS = 4000;
         let stderrTail = '';

@@ -12,6 +12,8 @@ export interface SpawnSessionOptions {
     token?: string
     sessionType?: 'simple' | 'worktree'
     worktreeName?: string
+    /** Custom MCP servers to inject into the Codex session. */
+    mcpServers?: Record<string, { command: string; args?: string[]; env?: Record<string, string> }>
 }
 
 export type SpawnSessionResult =

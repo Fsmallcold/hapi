@@ -4,6 +4,12 @@ import type { SyncEngine } from '../../sync/syncEngine'
 import type { WebAppEnv } from '../middleware/auth'
 import { requireMachine } from './guards'
 
+const mcpServerSchema = z.object({
+    command: z.string().min(1),
+    args: z.array(z.string()).optional(),
+    env: z.record(z.string()).optional()
+})
+
 const spawnBodySchema = z.object({
     directory: z.string().min(1),
     agent: z.enum(['claude', 'codex', 'cursor', 'gemini', 'opencode']).optional(),
@@ -12,7 +18,9 @@ const spawnBodySchema = z.object({
     modelReasoningEffort: z.string().optional(),
     yolo: z.boolean().optional(),
     sessionType: z.enum(['simple', 'worktree']).optional(),
-    worktreeName: z.string().optional()
+    worktreeName: z.string().optional(),
+    mcpServers: z.record(mcpServerSchema).optional(),
+    initialMessage: z.string().optional()
 })
 
 const pathsExistsSchema = z.object({
@@ -61,8 +69,21 @@ export function createMachinesRoutes(getSyncEngine: () => SyncEngine | null): Ho
             parsed.data.sessionType,
             parsed.data.worktreeName,
             undefined,
-            parsed.data.effort
+            parsed.data.effort,
+            parsed.data.mcpServers
         )
+
+        // Send initial message after successful spawn
+        if (result.type === 'success' && parsed.data.initialMessage) {
+            try {
+                await engine.sendMessage(result.sessionId, {
+                    text: parsed.data.initialMessage,
+                    sentFrom: 'webapp'
+                })
+            } catch (err) {
+                // Non-fatal: session was created, message delivery is best-effort
+            }
+        }
         return c.json(result)
     })
 

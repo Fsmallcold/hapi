@@ -8,8 +8,8 @@ import { stripCodexCliOverrides } from './utils/codexCliOverrides';
 import { buildCodexPermissionModeCliArgs } from './utils/permissionModeConfig';
 import { BaseLocalLauncher } from '@/modules/common/launcher/BaseLocalLauncher';
 
-export async function codexLocalLauncher(session: CodexSession): Promise<'switch' | 'exit'> {
-    const resumeSessionId = session.sessionId;
+export async function codexLocalLauncher(session: CodexSession): Promise<'switch' | 'exit' | 'retry'> {
+    let currentResumeSessionId = session.sessionId;
     let scanner: Awaited<ReturnType<typeof createCodexSessionScanner>> | null = null;
     const permissionMode = session.getPermissionMode();
     const managedPermissionMode = permissionMode === 'read-only' || permissionMode === 'safe-yolo' || permissionMode === 'yolo'
@@ -28,8 +28,13 @@ export async function codexLocalLauncher(session: CodexSession): Promise<'switch
 
     const handleSessionFound = (sessionId: string) => {
         session.onSessionFound(sessionId);
+        // Track for auto-resume: update the session ID so retries can resume it
+        currentResumeSessionId = sessionId;
         scanner?.onNewSession(sessionId);
     };
+
+    // Auto-resume enabled for runner-started Codex sessions
+    const isAutoResume = session.startedBy === 'runner';
 
     const launcher = new BaseLocalLauncher({
         label: 'codex-local',
@@ -38,10 +43,14 @@ export async function codexLocalLauncher(session: CodexSession): Promise<'switch
         rpcHandlerManager: session.client.rpcHandlerManager,
         startedBy: session.startedBy,
         startingMode: session.startingMode,
-        launch: async (abortSignal) => {
+        autoResume: isAutoResume,
+        getResumeSessionId: () => currentResumeSessionId,
+        launch: async (abortSignal, context) => {
+            // On retry, use the resume session ID from previous crash
+            const sessionId = context?.resumeSessionId ?? currentResumeSessionId;
             await codexLocal({
                 path: session.path,
-                sessionId: resumeSessionId,
+                sessionId,
                 onSessionFound: handleSessionFound,
                 abort: abortSignal,
                 codexArgs,
