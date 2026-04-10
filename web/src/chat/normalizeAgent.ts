@@ -62,11 +62,14 @@ function normalizeAssistantOutput(
                 blocks.push({ type: 'reasoning', text: block.thinking, uuid, parentUUID })
                 continue
             }
-            if (block.type === 'tool_use' && typeof block.id === 'string') {
-                const name = asString(block.name) ?? 'Tool'
-                const input = 'input' in block ? (block as Record<string, unknown>).input : undefined
-                const description = isObject(input) && typeof input.description === 'string' ? input.description : null
-                blocks.push({ type: 'tool-call', id: block.id, name, input, description, uuid, parentUUID })
+            if ((block.type === 'tool_use' || block.type === 'function_call') && typeof block.id === 'string') {
+                const name = asString(block.name ?? block.function ?? block.tool ?? block.toolName) ?? 'Tool'
+                const input = 'input' in block ? (block as Record<string, unknown>).input
+                    : 'arguments' in block ? (block as Record<string, unknown>).arguments
+                    : undefined
+                const parsedInput = typeof input === 'string' ? (() => { try { return JSON.parse(input); } catch { return input; } })() : input
+                const description = isObject(parsedInput) && typeof parsedInput.description === 'string' ? parsedInput.description : null
+                blocks.push({ type: 'tool-call', id: block.id, name, input: parsedInput, description, uuid, parentUUID })
             }
         }
     }
