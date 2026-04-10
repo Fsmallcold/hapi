@@ -160,11 +160,12 @@ function buildEventsUrl(
         params.set('machineId', subscription.machineId)
     }
 
-    const path = `/api/events?${params.toString()}`
+    const path = `api/events?${params.toString()}`
+    const base = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'
     try {
-        return new URL(path, baseUrl).toString()
+        return new URL(path, base).toString()
     } catch {
-        return path
+        return `/${path}`
     }
 }
 
