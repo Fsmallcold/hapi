@@ -502,9 +502,57 @@ export class AppServerEventConverter {
 
                 return events;
             }
+
+            // MCP tool calls: function_call, functioncalloutput, mcptoolcall, etc.
+            if (itemType === 'functioncall' || itemType === 'mcptoolcall' || itemType === 'tooluse') {
+                if (method === 'item/started') {
+                    const name = asString(item.name ?? item.tool ?? item.function);
+                    const callId = asString(item.callId ?? item.call_id ?? item.id ?? itemId);
+                    const rawArgs = item.arguments ?? item.input ?? item.args;
+                    let parsedArgs = rawArgs;
+                    if (typeof rawArgs === 'string') {
+                        try { parsedArgs = JSON.parse(rawArgs); } catch { /* keep as string */ }
+                    }
+                    if (name && callId) {
+                        events.push({
+                            type: 'mcp_tool_call_begin',
+                            call_id: callId,
+                            invocation: { tool: name, arguments: parsedArgs }
+                        });
+                    }
+                }
+                if (method === 'item/completed') {
+                    const callId = asString(item.callId ?? item.call_id ?? item.id ?? itemId);
+                    const output = item.output ?? item.result;
+                    if (callId) {
+                        events.push({
+                            type: 'mcp_tool_call_end',
+                            call_id: callId,
+                            result: output
+                        });
+                    }
+                }
+                return events;
+            }
+
+            // function_call_output items (tool results sent back to model)
+            if (itemType === 'functioncalloutput') {
+                if (method === 'item/completed') {
+                    const callId = asString(item.callId ?? item.call_id ?? item.id ?? itemId);
+                    const output = item.output ?? item.result;
+                    if (callId) {
+                        events.push({
+                            type: 'mcp_tool_call_end',
+                            call_id: callId,
+                            result: output
+                        });
+                    }
+                }
+                return events;
+            }
         }
 
-        logger.debug('[AppServerEventConverter] Unhandled notification', { method, params });
+        logger.warn('[AppServerEventConverter] Unhandled notification', { method, params: JSON.stringify(params).substring(0, 500) });
         return events;
     }
 
