@@ -30,7 +30,7 @@ export async function codexLocal(opts: {
     sandbox?: 'read-only' | 'workspace-write' | 'danger-full-access';
     onSessionFound: (id: string) => void;
     codexArgs?: string[];
-    mcpServers?: Record<string, { command: string; args: string[] }>;
+    mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
 }): Promise<void> {
     const args: string[] = [];
 

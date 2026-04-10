@@ -23,8 +23,23 @@ export async function codexLocalLauncher(session: CodexSession): Promise<'switch
         : session.codexArgs;
 
     // Start hapi hub for MCP bridge (same as remote mode)
-    const { server: happyServer, mcpServers } = await buildHapiMcpBridge(session.client);
+    const { server: happyServer, mcpServers: hapiMcpServers } = await buildHapiMcpBridge(session.client);
     logger.debug(`[codex-local]: Started hapi MCP bridge server at ${happyServer.url}`);
+
+    // Merge custom MCP servers from env (set by runner spawn)
+    let mcpServers = { ...hapiMcpServers };
+    const customMcpJson = process.env.HAPI_CUSTOM_MCP_SERVERS;
+    if (customMcpJson) {
+        try {
+            const custom = JSON.parse(customMcpJson) as Record<string, { command: string; args?: string[]; env?: Record<string, string> }>;
+            for (const [name, cfg] of Object.entries(custom)) {
+                mcpServers[name] = { command: cfg.command, args: cfg.args ?? [], env: cfg.env };
+            }
+            logger.debug(`[codex-local]: Merged ${Object.keys(custom).length} custom MCP server(s): ${Object.keys(custom).join(', ')}`);
+        } catch (e) {
+            logger.warn(`[codex-local]: Failed to parse HAPI_CUSTOM_MCP_SERVERS: ${e}`);
+        }
+    }
 
     const handleSessionFound = (sessionId: string) => {
         session.onSessionFound(sessionId);

@@ -4,12 +4,6 @@ import type { SyncEngine } from '../../sync/syncEngine'
 import type { WebAppEnv } from '../middleware/auth'
 import { requireMachine } from './guards'
 
-const mcpServerSchema = z.object({
-    command: z.string().min(1),
-    args: z.array(z.string()).optional(),
-    env: z.record(z.string()).optional()
-})
-
 const spawnBodySchema = z.object({
     directory: z.string().min(1),
     agent: z.enum(['claude', 'codex', 'cursor', 'gemini', 'opencode']).optional(),
@@ -19,7 +13,11 @@ const spawnBodySchema = z.object({
     yolo: z.boolean().optional(),
     sessionType: z.enum(['simple', 'worktree']).optional(),
     worktreeName: z.string().optional(),
-    mcpServers: z.record(mcpServerSchema).optional(),
+    mcpServers: z.record(z.string(), z.object({
+        command: z.string(),
+        args: z.array(z.string()).optional(),
+        env: z.record(z.string(), z.string()).optional()
+    })).optional(),
     initialMessage: z.string().optional()
 })
 
